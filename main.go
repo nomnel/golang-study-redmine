@@ -9,11 +9,19 @@ import (
 
 type config struct {
 	Endpoint string `json:"endpoint"`
+	Apikey   string `json:"apikey"`
 }
 
 func main() {
 	c := getConfig()
-	fmt.Printf("%s", c.Endpoint)
+	client := newClient(c.Endpoint, c.Apikey)
+	issues, err := client.issues()
+	if err != nil {
+		fatal("Failed to list issues: %s\n", err)
+	}
+	for _, i := range issues {
+		fmt.Printf("%4d: %s\n", i.Id, i.Subject)
+	}
 }
 
 func getConfig() config {

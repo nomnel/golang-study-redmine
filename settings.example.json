@@ -1,3 +1,4 @@
 {
-	"endpoint": "http://redmine.example.com"
+	"endpoint": "http://redmine.example.com",
+  "apikey": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 }
