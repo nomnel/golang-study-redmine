@@ -3,13 +3,23 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
 
 type issue struct {
-	Id      int    `json:"id"`
+	ID      int    `json:"id"`
 	Subject string `json:"subject"`
+}
+
+type issueFilter struct {
+	ProjectID    string
+	SubprojectID string
+	TrackerID    string
+	StatusID     string
+	AssignedToID string
+	UpdatedOn    string
 }
 
 type issuesResult struct {
@@ -21,6 +31,16 @@ type issuesResult struct {
 
 func (c *client) issues() ([]issue, error) {
 	issues, err := getIssues(c, "/issues.json?key="+c.apikey)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return issues, nil
+}
+
+func (c *client) issuesByFilter(f *issueFilter) ([]issue, error) {
+	issues, err := getIssues(c, "/issues.json?key="+c.apikey+c.getPaginationClause()+getIssueFilterClause(f))
 
 	if err != nil {
 		return nil, err
@@ -53,6 +73,35 @@ func getIssue(c *client, url string, offset int) (*issuesResult, error) {
 	}
 
 	return &r, nil
+}
+
+// issueFilter.toClause じゃだめなのか？
+func getIssueFilterClause(filter *issueFilter) string {
+	if filter == nil {
+		return ""
+	}
+
+	clause := ""
+	if filter.ProjectID != "" {
+		clause = clause + fmt.Sprintf("&project_id=%v", filter.ProjectID)
+	}
+	if filter.SubprojectID != "" {
+		clause = clause + fmt.Sprintf("&subproject_id=%v", filter.SubprojectID)
+	}
+	if filter.TrackerID != "" {
+		clause = clause + fmt.Sprintf("&tracker_id=%v", filter.TrackerID)
+	}
+	if filter.StatusID != "" {
+		clause = clause + fmt.Sprintf("&status_id=%v", filter.StatusID)
+	}
+	if filter.AssignedToID != "" {
+		clause = clause + fmt.Sprintf("&assigned_to_id=%v", filter.AssignedToID)
+	}
+	if filter.UpdatedOn != "" {
+		clause = clause + fmt.Sprintf("&updated_on=%v", filter.UpdatedOn)
+	}
+
+	return clause
 }
 
 func getIssues(c *client, url string) ([]issue, error) {

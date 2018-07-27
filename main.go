@@ -15,12 +15,15 @@ type config struct {
 func main() {
 	c := getConfig()
 	client := newClient(c.Endpoint, c.Apikey)
-	issues, err := client.issues()
+	filter := &issueFilter{
+		AssignedToID: "me",
+	}
+	issues, err := client.issuesByFilter(filter)
 	if err != nil {
 		fatal("Failed to list issues: %s\n", err)
 	}
 	for _, i := range issues {
-		fmt.Printf("%4d: %s\n", i.Id, i.Subject)
+		fmt.Printf("%4d: %s\n", i.ID, i.Subject)
 	}
 }
 
