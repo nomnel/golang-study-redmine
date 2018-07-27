@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 )
 
 type config struct {
@@ -26,6 +27,17 @@ func main() {
 		case "a", "add":
 			if flag.NArg() == 4 {
 				addIssue(flag.Arg(2), flag.Arg(3))
+			} else {
+				usage()
+			}
+			break
+		case "d", "delete":
+			if flag.NArg() == 3 {
+				id, err := strconv.Atoi(flag.Arg(2))
+				if err != nil {
+					fatal("Invalid issue id: %s\n", err)
+				}
+				deleteIssue(id)
 			} else {
 				usage()
 			}
@@ -57,6 +69,14 @@ func addIssue(subject, description string) {
 	_, err := c.createIssue(i)
 	if err != nil {
 		fatal("Failed to create issue: %s\n", err)
+	}
+}
+
+func deleteIssue(id int) {
+	c := newClient(conf.Endpoint, conf.Apikey)
+	err := c.deleteIssue(id)
+	if err != nil {
+		fatal("Failed to delete issue: %s\n", err)
 	}
 }
 
