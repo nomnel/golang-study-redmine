@@ -11,6 +11,7 @@ import (
 type config struct {
 	Endpoint string `json:"endpoint"`
 	Apikey   string `json:"apikey"`
+	Project  int    `json:"project"`
 }
 
 var conf config
@@ -22,6 +23,13 @@ func main() {
 	switch flag.Arg(0) {
 	case "i", "issue":
 		switch flag.Arg(1) {
+		case "a", "add":
+			if flag.NArg() == 4 {
+				addIssue(flag.Arg(2), flag.Arg(3))
+			} else {
+				usage()
+			}
+			break
 		case "l", "list":
 			listIssues(nil)
 			break
@@ -36,6 +44,19 @@ func main() {
 		}
 	default:
 		usage()
+	}
+}
+
+func addIssue(subject, description string) {
+	c := newClient(conf.Endpoint, conf.Apikey)
+	i := issue{
+		ProjectID:   conf.Project,
+		Subject:     subject,
+		Description: description,
+	}
+	_, err := c.createIssue(i)
+	if err != nil {
+		fatal("Failed to create issue: %s\n", err)
 	}
 }
 

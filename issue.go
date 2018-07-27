@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 )
 
 type issue struct {
-	ID      int    `json:"id"`
-	Subject string `json:"subject"`
+	ID          int    `json:"id"`
+	Subject     string `json:"subject"`
+	Description string `json:"description"`
+	ProjectID   int    `json:"project_id"`
 }
 
 type issueFilter struct {
@@ -22,11 +25,54 @@ type issueFilter struct {
 	UpdatedOn    string
 }
 
+type issueRequest struct {
+	Issue issue `json:"issue"`
+}
+
 type issuesResult struct {
 	Issues     []issue `json:"issues"`
 	TotalCount uint    `json:"total_count"`
 	Offset     uint    `json:"offset"`
 	Limit      uint    `json:"limit"`
+}
+
+// issue が値渡しなのはなぜ？
+func (c *client) createIssue(i issue) (*issue, error) {
+	ir := issueRequest{
+		Issue: i,
+	}
+	s, err := json.Marshal(ir)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", c.endpoint+"/issues.json?key="+c.apikey, strings.NewReader(string(s)))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	res, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	decoder := json.NewDecoder(res.Body)
+	var r issueRequest
+	if res.StatusCode != 201 {
+		var er errorsResult
+		err = decoder.Decode(&er)
+		if err == nil {
+			err = errors.New(strings.Join(er.Errors, "\n"))
+		}
+	} else {
+		err = decoder.Decode(&r)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &r.Issue, nil
 }
 
 func (c *client) issues() ([]issue, error) {
